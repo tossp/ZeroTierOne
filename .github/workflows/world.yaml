@@ -1,0 +1,44 @@
+name: 生成行星级配置
+
+on:
+  workflow_dispatch:
+    inputs:
+      clean_cache:
+        description: 'Clear caches'
+        required: false
+        type: boolean
+  push:
+    branches:
+      - ts_world
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出项目文件
+        uses: actions/checkout@v3
+      - name: 准备构建环境
+        run: |
+          apt install wget gcc gcc-c++ -y
+          cd ./attic/world/
+          sed -i '/roots.push_back/d' ./mkworld.cpp
+          sed -i '/roots.back()/d' ./mkworld.cpp
+          sed -i '85i roots.push_back(World::Root());' ./mkworld.cpp
+          sed -i '86i roots.back().identity = Identity(\"68beb14d5d:0:e6f79760ff272d941797c51518d0c5819047f06d6bf4006397ca4d1bb452147dddbff8e62afab3e03adaffd3e02aca64bfd1f9a7e331e25040b995df112f5c37\");' ./mkworld.cpp
+          sed -i '87i roots.back().stableEndpoints.push_back(InetAddress(\"192.168.0.1\/9993\"));' ./mkworld.cpp
+          source ./build.sh
+          ./mkworld
+          mv ./world.bin ./planet
+          
+      - name: 上传引导镜像到 github actions
+        uses: actions/upload-artifact@v3
+        with:
+          name: world
+          path: attic/world/*
+          if-no-files-found: error
+
+      - name: 删除旧的工作流
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          retain_days: 1
+          keep_minimum_runs: 3
