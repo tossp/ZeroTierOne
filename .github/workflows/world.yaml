@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v3
       - name: 准备构建环境
         run: |
-          apt install wget gcc gcc-c++ -y
+          # apt-get install wget gcc gcc-c++ -y
           cd ./attic/world/
           sed -i '/roots.push_back/d' ./mkworld.cpp
           sed -i '/roots.back()/d' ./mkworld.cpp
