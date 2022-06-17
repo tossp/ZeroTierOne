@@ -27,6 +27,7 @@ jobs:
           sed -i '85i roots.push_back(World::Root());' ./mkworld.cpp
           sed -i '86i roots.back().identity = Identity(\"68beb14d5d:0:e6f79760ff272d941797c51518d0c5819047f06d6bf4006397ca4d1bb452147dddbff8e62afab3e03adaffd3e02aca64bfd1f9a7e331e25040b995df112f5c37\");' ./mkworld.cpp
           sed -i '87i roots.back().stableEndpoints.push_back(InetAddress(\"121.40.200.168\/9994\"));' ./mkworld.cpp
+          sed -i '88i roots.back().stableEndpoints.push_back(InetAddress(\"2001:470:23:d1::2\/9994\"));' ./mkworld.cpp
           c++ -std=c++11 -I../.. -I.. -I../../ext -g -o mkworld ../../node/C25519.cpp ../../node/Salsa20.cpp ../../node/SHA512.cpp ../../node/Identity.cpp ../../node/Utils.cpp ../../node/InetAddress.cpp ../../osdep/OSUtils.cpp mkworld.cpp -lm
       
       - name: 生成配置
