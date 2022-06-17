@@ -14,11 +14,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: docker.io/centos:7
     steps:
       - name: 检出项目文件
         uses: actions/checkout@v3
       - name: 准备构建环境
         run: |
+          make centos-7-setup
           # apt-get install wget gcc gcc-c++ -y
           cd ./attic/world/
           sed -i '/roots.push_back/d' ./mkworld.cpp
