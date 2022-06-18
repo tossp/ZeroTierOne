@@ -1,4 +1,4 @@
-name: 生成行星级配置
+name: 构建
 
 on:
   workflow_dispatch:
@@ -14,12 +14,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: 生成新的配置文件
+    name: 构建项目
     steps:
       - name: 检出项目文件
         uses: actions/checkout@v3
         
-      - name: 修改配置
+      - name: 配置world
         run: |
           cd ./attic/world/
           sed -i '/roots.push_back/d' ./mkworld.cpp
@@ -30,17 +30,26 @@ jobs:
           sed -i '88i roots.back().stableEndpoints.push_back(InetAddress(\"2001:470:23:d1::2\/9994\"));' ./mkworld.cpp
           c++ -std=c++11 -I../.. -I.. -I../../ext -g -o mkworld ../../node/C25519.cpp ../../node/Salsa20.cpp ../../node/SHA512.cpp ../../node/Identity.cpp ../../node/Utils.cpp ../../node/InetAddress.cpp ../../osdep/OSUtils.cpp mkworld.cpp -lm
       
-      - name: 生成配置
+      - name: 生成 world
         run: |
-          cd ./attic/world/
-          ./mkworld > world.txt
+          ./attic/world/mkworld > attic/world/world.txt
+          cat attic/world/world.txt
+          sed -i '25,26d' node/Topology.cpp
+          sed -i '25 r attic/world/world.txt' node/Topology.cpp
+          sed -n  '20,30p' node/Topology.cpp
+          
+      - name: 编译
+        run: |
+          make official
           
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
         with:
           name: world
-          path: attic/world/world.*
+          path: |
+            attic/world/world.*
           if-no-files-found: error
+          retention-days: 1
 
       - name: 删除旧的工作流
         uses: Mattraks/delete-workflow-runs@v2
