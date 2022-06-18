@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       clean_cache:
-        description: "Clear caches"
+        description: "清除缓存"
         required: false
         type: boolean
   push:
@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     name: 预处理
     steps:
-      - name: 清理环境
-        uses: actions/checkout@v2
+      - name: 初始化环境
+        uses: actions/checkout@v3
 
       - name: 配置world
         run: |
@@ -37,15 +37,12 @@ jobs:
           sed -i '23r attic/world/world.c' node/Topology.cpp
           cp node/Topology.cpp attic/world/world.cpp
 
-      - name: 调整镜像脚本
-        run: |
-          sed -i 's#registry.zerotier.com/zerotier#tossp#g' ./ext/central-controller-docker/Dockerfile
-
-      - name: 上传成果到 github actions
+      - name: 保存工作流产物
         uses: actions/upload-artifact@v3
         with:
           name: pre
           path: |
+            node/Topology.cpp
             attic/world/world.*
           if-no-files-found: error
           retention-days: 1
@@ -55,6 +52,14 @@ jobs:
     name: 构建 debian 安装包
     needs: [pre]
     steps:
+      - name: 初始化环境
+        uses: actions/checkout@v3
+
+      - name: 下载工作流产物
+        uses: actions/download-artifact@v3
+        with:
+          name: pre
+
       - name: 安装依赖
         run: |
           sudo apt-get install -y devscripts debhelper
@@ -76,7 +81,6 @@ jobs:
           name: debian
           path: |
             world.*
-            attic/world/world.*
             dist/
             zerotier-*
           if-no-files-found: error
@@ -87,6 +91,14 @@ jobs:
     name: 构建控制器
     needs: [pre]
     steps:
+      - name: 初始化环境
+        uses: actions/checkout@v3
+
+      - name: 下载工作流产物
+        uses: actions/download-artifact@v3
+        with:
+          name: pre
+
       - name: 获取参数
         id: pkw
         run: |
@@ -112,6 +124,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: 调整镜像脚本
+        run: |
+          sed -i 's#registry.zerotier.com/zerotier#tossp#g' ./ext/central-controller-docker/Dockerfile
 
       - name: 准备辅助镜像 controller-builder
         uses: docker/build-push-action@v2
