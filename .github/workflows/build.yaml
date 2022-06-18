@@ -52,7 +52,7 @@ jobs:
           name: world
           path: |
             attic/world/world.*
-            **/zerotier-one
+            **/*.deb
           if-no-files-found: error
           retention-days: 1
 
