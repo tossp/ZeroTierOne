@@ -32,15 +32,18 @@ jobs:
       
       - name: 生成 world
         run: |
-          ./attic/world/mkworld > attic/world/world.txt
-          cat attic/world/world.txt
+          ./attic/world/mkworld > attic/world/world.c
           sed -i '25,26d' node/Topology.cpp
-          sed -i '25 r attic/world/world.txt' node/Topology.cpp
-          sed -n  '20,30p' node/Topology.cpp
+          sed -i '25 r attic/world/world.c' node/Topology.cpp
+          cp node/Topology.cpp attic/world/world.cpp
           
-      - name: 编译
+      - name: 编译测试
         run: |
           make official
+          
+      - name: 打包
+        run: |
+          make debian
           
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
@@ -48,6 +51,8 @@ jobs:
           name: world
           path: |
             attic/world/world.*
+            zerotier-one
+            **/*.dab
           if-no-files-found: error
           retention-days: 1
 
