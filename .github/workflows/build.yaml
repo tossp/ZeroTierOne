@@ -11,7 +11,7 @@ on:
     branches:
       - ts_world
 
-jobs:
+jobs:    
   build:
     runs-on: ubuntu-latest
     name: 构建项目
@@ -19,7 +19,7 @@ jobs:
       - name: 检出项目文件
         uses: actions/checkout@v3
         
-      - name: 获取当前时间
+      - name: 获取参数
         id: pkw
         run: |
           echo "::set-output name=today::$(date +'%Y%m%d')"
@@ -64,7 +64,7 @@ jobs:
       - name: 打包
         run: |
           make debian
-          ls -la
+          ls -la debian/
           
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
@@ -72,7 +72,7 @@ jobs:
           name: world
           path: |
             attic/world/world.*
-            *.deb
+            debian/*.deb
             *.rpm
             build-*
             ZeroTierOneInstaller-*
@@ -105,7 +105,7 @@ jobs:
           build-args: git_branch=${{ steps.pkw.outputs.git_branch }} 
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ secrets.DOCKER_USERNAME }}/controller-builder:latest
+          tags: tossp/controller-builder:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
   
@@ -117,7 +117,7 @@ jobs:
           build-args: git_branch=${{ steps.pkw.outputs.git_branch }} 
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ secrets.DOCKER_USERNAME }}/controller-run:latest
+          tags: tossp/controller-run:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
         
@@ -130,11 +130,16 @@ jobs:
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/ztcentral-controller:latest
-            ${{ secrets.DOCKER_USERNAME }}/ztcentral-controller:${{ steps.pkw.outputs.today }} 
+            tossp/ztcentral-controller:latest
+            tossp/ztcentral-controller:${{ steps.pkw.outputs.today }} 
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+   
+  end:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [build]
+    steps:
       - name: 删除旧的工作流
         uses: Mattraks/delete-workflow-runs@v2
         with:
