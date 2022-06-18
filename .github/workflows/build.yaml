@@ -64,8 +64,9 @@ jobs:
       - name: 打包
         run: |
           make debian
-          ls -la debian/
-          ls -la ../
+          ls -la
+          mkdir dist
+          cp ../zerotier-one* dist/
           
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
@@ -73,10 +74,7 @@ jobs:
           name: world
           path: |
             attic/world/world.*
-            debian/*.deb
-            *.rpm
-            build-*
-            ZeroTierOneInstaller-*
+            dist/
           if-no-files-found: error
           retention-days: 1
         
