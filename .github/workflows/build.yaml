@@ -39,7 +39,12 @@ jobs:
           
       - name: 编译
         run: |
-          make official
+          make official 
+          
+      - name: 打包
+        run: |
+          sudo apt-get install -y devscripts debhelper
+          make debian
           
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
