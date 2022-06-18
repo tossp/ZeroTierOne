@@ -93,7 +93,7 @@ jobs:
       
       - name: 准备构建镜像
         run: |
-          sed -i 's#registry.zerotier.com/zerotier##g' ./ext/central-controller-docker/Dockerfile 
+          sed -i 's#registry.zerotier.com/zerotier#tossp#g' ./ext/central-controller-docker/Dockerfile 
           cat ./ext/central-controller-docker/Dockerfile
   
       - name: 准备辅助镜像 controller-builder
