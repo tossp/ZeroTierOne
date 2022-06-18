@@ -19,6 +19,26 @@ jobs:
       - name: 检出项目文件
         uses: actions/checkout@v3
         
+      - name: 获取当前时间
+        id: pkw
+        run: |
+          echo "::set-output name=today::$(date +'%Y%m%d')"
+          echo "::set-output name=git_branch::$(git name-rev --name-only HEAD)"
+        
+      - name: 安装依赖
+        run: |
+          sudo apt-get install -y devscripts debhelper
+          
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        
+      - name: 查看可用平台
+        run: echo ${{ steps.buildx.outputs.platforms }}
+        
       - name: 配置world
         run: |
           cd ./attic/world/
@@ -43,8 +63,8 @@ jobs:
           
       - name: 打包
         run: |
-          sudo apt-get install -y devscripts debhelper
           make debian
+          ls -la
           
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
@@ -52,10 +72,69 @@ jobs:
           name: world
           path: |
             attic/world/world.*
-            **/*.deb
+            *.deb
+            *.rpm
+            build-*
+            ZeroTierOneInstaller-*
           if-no-files-found: error
           retention-days: 1
-
+        
+#       - name: 登录阿里云容器
+#         uses: docker/login-action@v1
+#         with:
+#           registry: registry.cn-hangzhou.aliyuncs.com
+#           username: ${{ secrets.ALIYUN_USERNAME }}
+#           password: ${{ secrets.ALIYUN_PASSWORD }}
+          
+      - name: 登录 DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: 准备构建镜像
+        run: |
+          sed -i '#registry.zerotier.com/zerotier##g' ./ext/central-controller-docker/Dockerfile 
+          cat ./ext/central-controller-docker/Dockerfile
+  
+      - name: 准备辅助镜像 controller-builder
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./ext/central-controller-docker/Dockerfile.builder
+          build-args: git_branch=${{ steps.pkw.outputs.git_branch }} 
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/controller-builder:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  
+      - name: 准备辅助镜像 controller-run
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./ext/central-controller-docker/Dockerfile.run_base
+          build-args: git_branch=${{ steps.pkw.outputs.git_branch }} 
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/controller-run:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        
+      - name: 构建镜像并推送
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./ext/central-controller-docker/Dockerfile
+          build-args: git_branch=${{ steps.pkw.outputs.git_branch }} 
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/ztcentral-controller:latest
+            ${{ secrets.DOCKER_USERNAME }}/ztcentral-controller:${{ steps.pkw.outputs.today }} 
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
       - name: 删除旧的工作流
         uses: Mattraks/delete-workflow-runs@v2
         with:
