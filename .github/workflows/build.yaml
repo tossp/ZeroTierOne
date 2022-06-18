@@ -43,7 +43,7 @@ jobs:
           
       - name: 打包
         run: |
-          apt-get update && install devscripts
+          sudo apt-get install -y devscripts
           make debian
           
       - name: 上传成果到 github actions
