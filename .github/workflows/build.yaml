@@ -65,6 +65,7 @@ jobs:
         run: |
           make debian
           ls -la debian/
+          ls -la ../
           
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
