@@ -4,51 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       clean_cache:
-        description: 'Clear caches'
+        description: "Clear caches"
         required: false
         type: boolean
   push:
     branches:
       - ts_world
 
-jobs:    
-  build:
+jobs:
+  pre:
     runs-on: ubuntu-latest
-    name: 构建项目
+    name: 预处理
     steps:
-      - name: 检出项目文件
-        uses: actions/checkout@v3
-        
-      - name: 获取参数
-        id: pkw
-        run: |
-          echo "::set-output name=today::$(date +'%Y%m%d')"
-          echo "::set-output name=git_branch::$(git name-rev --name-only HEAD)"
-        
-      - name: 安装依赖
-        run: |
-          sudo apt-get install -y devscripts debhelper
-          
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-        
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-                
-      - name: 登录阿里云容器
-        uses: docker/login-action@v1
-        with:
-          registry: registry.cn-chengdu.aliyuncs.com
-          username: ${{ secrets.ALIYUN_USERNAME }}
-          password: ${{ secrets.ALIYUN_PASSWORD }}
-          
-      - name: 登录 DockerHub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-        
+      - name: 清理环境
+        uses: actions/checkout@v2
+
       - name: 配置world
         run: |
           cd ./attic/world/
@@ -59,84 +29,135 @@ jobs:
           sed -i '87i roots.back().stableEndpoints.push_back(InetAddress(\"121.40.200.168\/9994\"));' ./mkworld.cpp
           sed -i '88i roots.back().stableEndpoints.push_back(InetAddress(\"2001:470:23:d1::2\/9994\"));' ./mkworld.cpp
           c++ -std=c++11 -I../.. -I.. -I../../ext -g -o mkworld ../../node/C25519.cpp ../../node/Salsa20.cpp ../../node/SHA512.cpp ../../node/Identity.cpp ../../node/Utils.cpp ../../node/InetAddress.cpp ../../osdep/OSUtils.cpp mkworld.cpp -lm
-      
+
       - name: 生成 world
         run: |
           ./attic/world/mkworld > attic/world/world.c
           sed -i '25,26d' node/Topology.cpp
           sed -i '23r attic/world/world.c' node/Topology.cpp
           cp node/Topology.cpp attic/world/world.cpp
-          
+
+      - name: 调整镜像脚本
+        run: |
+          sed -i 's#registry.zerotier.com/zerotier#tossp#g' ./ext/central-controller-docker/Dockerfile
+
+      - name: 上传成果到 github actions
+        uses: actions/upload-artifact@v3
+        with:
+          name: pre
+          path: |
+            attic/world/world.*
+          if-no-files-found: error
+          retention-days: 1
+
+  build-debian:
+    runs-on: ubuntu-latest
+    name: 构建 debian 安装包
+    needs: [pre]
+    steps:
+      - name: 安装依赖
+        run: |
+          sudo apt-get install -y devscripts debhelper
+
       - name: 编译
         run: |
-          make official 
-          
+          make official
+
       - name: 打包
         run: |
           make debian
           ls -la
           mkdir dist
           cp ../zerotier-one* dist/
-          
+
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
         with:
-          name: world
+          name: debian
           path: |
+            world.*
             attic/world/world.*
             dist/
+            zerotier-*
           if-no-files-found: error
           retention-days: 1
-      
-      - name: 准备构建镜像
+
+  build-controller:
+    runs-on: ubuntu-latest
+    name: 构建控制器
+    needs: [pre]
+    steps:
+      - name: 获取参数
+        id: pkw
         run: |
-          sed -i 's#registry.zerotier.com/zerotier#tossp#g' ./ext/central-controller-docker/Dockerfile 
-          cat ./ext/central-controller-docker/Dockerfile
-  
+          echo "::set-output name=today::$(date +'%Y%m%d')"
+          echo "::set-output name=git_branch::$(git name-rev --name-only HEAD)"
+
+      - name: 设置 QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: 设置 Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: 登录阿里云容器
+        uses: docker/login-action@v1
+        with:
+          registry: registry.cn-chengdu.aliyuncs.com
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: 登录 DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: 准备辅助镜像 controller-builder
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./ext/central-controller-docker/Dockerfile.builder
-          build-args: git_branch=${{ steps.pkw.outputs.git_branch }} 
+          build-args: git_branch=${{ steps.pkw.outputs.git_branch }}
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: tossp/controller-builder:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  
+
       - name: 准备辅助镜像 controller-run
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./ext/central-controller-docker/Dockerfile.run_base
-          build-args: git_branch=${{ steps.pkw.outputs.git_branch }} 
+          build-args: git_branch=${{ steps.pkw.outputs.git_branch }}
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: tossp/controller-run:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-        
+
       - name: 构建镜像并推送
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./ext/central-controller-docker/Dockerfile
-          build-args: git_branch=${{ steps.pkw.outputs.git_branch }} 
+          build-args: git_branch=${{ steps.pkw.outputs.git_branch }}
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             tossp/ztcentral-controller:latest
             tossp/ztcentral-controller:${{ steps.pkw.outputs.today }} 
             registry.cn-chengdu.aliyuncs.com/tossp/ztcentral-controller:latest
-            registry.cn-chengdu.aliyuncs.com/tossp/ztcentral-controller:${{ steps.pkw.outputs.today }} 
+            registry.cn-chengdu.aliyuncs.com/tossp/ztcentral-controller:${{ steps.pkw.outputs.today }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-   
+
   end:
+    name: 结束
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    needs: [build]
+    needs: [build-debian, build-controller]
     steps:
       - name: 删除旧的工作流
         uses: Mattraks/delete-workflow-runs@v2
