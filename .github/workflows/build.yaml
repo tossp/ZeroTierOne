@@ -37,14 +37,9 @@ jobs:
           sed -i '25 r attic/world/world.c' node/Topology.cpp
           cp node/Topology.cpp attic/world/world.cpp
           
-      - name: 编译测试
+      - name: 编译
         run: |
           make official
-          
-      - name: 打包
-        run: |
-          sudo apt-get install -y devscripts
-          make debian
           
       - name: 上传成果到 github actions
         uses: actions/upload-artifact@v3
@@ -52,8 +47,7 @@ jobs:
           name: world
           path: |
             attic/world/world.*
-            zerotier-one
-            **/*.dab
+            **/zerotier-one
           if-no-files-found: error
           retention-days: 1
 
