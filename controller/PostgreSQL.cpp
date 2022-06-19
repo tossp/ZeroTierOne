@@ -1325,7 +1325,9 @@ void PostgreSQL::commitThread()
 					fprintf(stderr, "%s test: ztc_network_route ok.\n", _myAddressStr.c_str());
 
 					auto dns = config["dns"];
+					fprintf(stderr, "%s test: ztc_network_dns dns.\n", _myAddressStr.c_str());
 					std::string domain = dns["domain"];
+					fprintf(stderr, "%s test: ztc_network_dns domain.\n", _myAddressStr.c_str());
 					std::stringstream servers;
 					servers << "{";
 					for (auto j = dns["servers"].begin(); j < dns["servers"].end(); ++j) {
@@ -1335,8 +1337,9 @@ void PostgreSQL::commitThread()
 						}
 					}
 					servers << "}";
-
+					fprintf(stderr, "%s test: ztc_network_dns servers.\n", _myAddressStr.c_str());
 					std::string s = servers.str();
+					fprintf(stderr, "%s test: ztc_network_dns s.\n", _myAddressStr.c_str());
 
 					res = w.exec_params0("INSERT INTO ztc_network_dns (network_id, domain, servers) VALUES ($1, $2, $3) ON CONFLICT (network_id) DO UPDATE SET domain = EXCLUDED.domain, servers = EXCLUDED.servers",
 						id, domain, s);
