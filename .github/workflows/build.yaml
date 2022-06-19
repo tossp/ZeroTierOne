@@ -127,30 +127,6 @@ jobs:
         run: |
           sed -i 's#registry.zerotier.com/zerotier#tossp#g' ./ext/central-controller-docker/Dockerfile
 
-      - name: 准备辅助镜像 controller-builder
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./ext/central-controller-docker/Dockerfile.builder
-          build-args: git_branch=${{ steps.pkw.outputs.git_branch }}
-          platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: tossp/controller-builder:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: 准备辅助镜像 controller-run
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./ext/central-controller-docker/Dockerfile.run_base
-          build-args: git_branch=${{ steps.pkw.outputs.git_branch }}
-          platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: tossp/controller-run:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
       - name: 构建镜像并推送
         uses: docker/build-push-action@v2
         with:
