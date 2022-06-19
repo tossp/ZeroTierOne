@@ -1323,6 +1323,7 @@ void PostgreSQL::commitThread()
 					}
 					
 					fprintf(stderr, "%s test: ztc_network_route ok.\n", _myAddressStr.c_str());
+					fprintf(stderr, "%s test: ztc_network_dns %s.\n", _myAddressStr.c_str(),OSUtils::jsonDump(config["dns"],-1).c_str());
 
 					auto dns = config["dns"];
 					fprintf(stderr, "%s test: ztc_network_dns dns.\n", _myAddressStr.c_str());
