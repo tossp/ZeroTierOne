@@ -25,10 +25,11 @@ jobs:
           sed -i '/roots.push_back/d' ./mkworld.cpp
           sed -i '/roots.back()/d' ./mkworld.cpp
           sed -i '85r world.txt;' ./mkworld.cpp
-          c++ -std=c++11 -I../.. -I.. -I../../ext -g -o mkworld ../../node/C25519.cpp ../../node/Salsa20.cpp ../../node/SHA512.cpp ../../node/Identity.cpp ../../node/Utils.cpp ../../node/InetAddress.cpp ../../osdep/OSUtils.cpp mkworld.cpp -lm
+          cat ./mkworld.cpp
 
       - name: 生成 world
         run: |
+          c++ -std=c++11 -I../.. -I.. -I../../ext -g -o mkworld ../../node/C25519.cpp ../../node/Salsa20.cpp ../../node/SHA512.cpp ../../node/Identity.cpp ../../node/Utils.cpp ../../node/InetAddress.cpp ../../osdep/OSUtils.cpp mkworld.cpp -lm
           ./attic/world/mkworld > attic/world/world.c
           sed -i '25,26d' node/Topology.cpp
           sed -i '23r attic/world/world.c' node/Topology.cpp
@@ -40,7 +41,7 @@ jobs:
           name: pre
           path: |
             node/Topology.cpp
-            attic/world/world.*
+            attic/world/
           if-no-files-found: error
           retention-days: 1
 
