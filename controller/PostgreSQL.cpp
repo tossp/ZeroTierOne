@@ -1241,7 +1241,7 @@ void PostgreSQL::commitThread()
 						"$1, TO_TIMESTAMP($5::double precision/1000), "
 						"(SELECT user_id AS owner_id FROM ztc_global_permissions WHERE authorize = true AND del = true AND modify = true AND read = true LIMIT 1),"
 						"$2, $3, $4, TO_TIMESTAMP($5::double precision/1000), "
-						"$6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 17) "
+						"$6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) "
 						"ON CONFLICT (id) DO UPDATE set controller_id = EXCLUDED.controller_id, "
 						"capabilities = EXCLUDED.capabilities, enable_broadcast = EXCLUDED.enable_broadcast, "
 						"last_modified = EXCLUDED.last_modified, mtu = EXCLUDED.mtu, "
@@ -1316,7 +1316,7 @@ void PostgreSQL::commitThread()
 
 					fprintf(stderr, "%s test: ztc_network_dns %s.\n", _myAddressStr.c_str(),OSUtils::jsonDump(config["dns"],-1).c_str());
 					auto dns = config["dns"];
-					if(dns.is_object()) {
+					if (dns.is_object()) {
 						std::string domain = dns["domain"];
 						std::stringstream servers;
 						servers << "{";
@@ -1331,7 +1331,7 @@ void PostgreSQL::commitThread()
 						std::string s = servers.str();
 
 						res = w.exec_params0("INSERT INTO ztc_network_dns (network_id, domain, servers) VALUES ($1, $2, $3) ON CONFLICT (network_id) DO UPDATE SET domain = EXCLUDED.domain, servers = EXCLUDED.servers",
-							id, domain, s);						
+							id, domain, s);
 					}
 
 					w.commit();
