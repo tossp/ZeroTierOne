@@ -675,13 +675,13 @@ void PostgreSQL::initializeNetworks()
 				for (auto it = routes.begin(); it != routes.end(); ++it) {
 					std::vector<std::string> r = split(*it, '|');
 					json route;
-					fprintf(stderr, "%s test: route[\"via\"] %s.\n", _myAddressStr.c_str(),r[1].c_str());
+					fprintf(stderr, "%s test: route[\"via\"] %s.\n", _myAddressStr.c_str(),r[1]);
 					route["target"] = r[0];
-					route["via"] = ((r[1].compare("NULL") == 0 )? nullptr : r[1]);
+					route["via"] = ((r[1] == "NULL" )? nullptr : r[1]);
 					config["routes"].push_back(route);
 				}
 			}
-
+			fprintf(stderr, "%s test: routes ok.\n", _myAddressStr.c_str() );
 		 	_networkChanged(empty, config, false);
 
 			auto end = std::chrono::high_resolution_clock::now();
