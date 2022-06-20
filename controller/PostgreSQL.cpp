@@ -1226,8 +1226,6 @@ void PostgreSQL::commitThread()
 					if (config["rulesSource"].is_string()) {
 						rulesSource = config["rulesSource"];
 					}
-					
-					fprintf(stderr, "%s test: per sql.\n", _myAddressStr.c_str());
 
 					// This ugly query exists because when we want to mirror networks to/from
 					// another data store (e.g. FileDB or LFDB) it is possible to get a network
@@ -1243,7 +1241,7 @@ void PostgreSQL::commitThread()
 						"$1, TO_TIMESTAMP($5::double precision/1000), "
 						"(SELECT user_id AS owner_id FROM ztc_global_permissions WHERE authorize = true AND del = true AND modify = true AND read = true LIMIT 1),"
 						"$2, $3, $4, TO_TIMESTAMP($5::double precision/1000), "
-						"$6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) "
+						"$6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 17) "
 						"ON CONFLICT (id) DO UPDATE set controller_id = EXCLUDED.controller_id, "
 						"capabilities = EXCLUDED.capabilities, enable_broadcast = EXCLUDED.enable_broadcast, "
 						"last_modified = EXCLUDED.last_modified, mtu = EXCLUDED.mtu, "
@@ -1270,12 +1268,8 @@ void PostgreSQL::commitThread()
 						OSUtils::jsonDump(config["v4AssignMode"],-1),
 						OSUtils::jsonDump(config["v6AssignMode"], -1),
 						OSUtils::jsonBool(config["ssoEnabled"], false));
-					
-					fprintf(stderr, "%s test: ztc_network ok.\n", _myAddressStr.c_str());
 
 					res = w.exec_params0("DELETE FROM ztc_network_assignment_pool WHERE network_id = $1", 0);
-					
-					fprintf(stderr, "%s test: exe ok.\n", _myAddressStr.c_str());
 
 					auto pool = config["ipAssignmentPools"];
 					bool err = false;
@@ -1289,8 +1283,6 @@ void PostgreSQL::commitThread()
 					}
 
 					res = w.exec_params0("DELETE FROM ztc_network_route WHERE network_id = $1", id);
-					
-					fprintf(stderr, "%s test: ztc_network_assignment_pool ok.\n", _myAddressStr.c_str());
 
 					auto routes = config["routes"];
 					err = false;
@@ -1321,35 +1313,25 @@ void PostgreSQL::commitThread()
 						_pool->unborrow(c);
 						continue;
 					}
-					
-					fprintf(stderr, "%s test: ztc_network_route ok.\n", _myAddressStr.c_str());
-					fprintf(stderr, "%s test: ztc_network_dns %s.\n", _myAddressStr.c_str(),OSUtils::jsonDump(config["dns"],-1).c_str());
 
-					auto dns = config["dns"];
-					fprintf(stderr, "%s test: ztc_network_dns dns.\n", _myAddressStr.c_str());
-					std::string domain = dns["domain"];
-					fprintf(stderr, "%s test: ztc_network_dns domain.\n", _myAddressStr.c_str());
-					std::stringstream servers;
-					servers << "{";
-					for (auto j = dns["servers"].begin(); j < dns["servers"].end(); ++j) {
-						servers << *j;
-						if ( (j+1) != dns["servers"].end()) {
-							servers << ",";
-						}
-					}
-					servers << "}";
-					fprintf(stderr, "%s test: ztc_network_dns servers.\n", _myAddressStr.c_str());
-					std::string s = servers.str();
-					fprintf(stderr, "%s test: ztc_network_dns s.\n", _myAddressStr.c_str());
+					// auto dns = config["dns"];
+					// std::string domain = dns["domain"];
+					// std::stringstream servers;
+					// servers << "{";
+					// for (auto j = dns["servers"].begin(); j < dns["servers"].end(); ++j) {
+					// 	servers << *j;
+					// 	if ( (j+1) != dns["servers"].end()) {
+					// 		servers << ",";
+					// 	}
+					// }
+					// servers << "}";
 
-					res = w.exec_params0("INSERT INTO ztc_network_dns (network_id, domain, servers) VALUES ($1, $2, $3) ON CONFLICT (network_id) DO UPDATE SET domain = EXCLUDED.domain, servers = EXCLUDED.servers",
-						id, domain, s);
-					
-					fprintf(stderr, "%s test: ztc_network_dns ok.\n", _myAddressStr.c_str());
+					// std::string s = servers.str();
+
+					// res = w.exec_params0("INSERT INTO ztc_network_dns (network_id, domain, servers) VALUES ($1, $2, $3) ON CONFLICT (network_id) DO UPDATE SET domain = EXCLUDED.domain, servers = EXCLUDED.servers",
+					// 	id, domain, s);
 
 					w.commit();
-					
-					fprintf(stderr, "%s test: commit ok.\n", _myAddressStr.c_str());
 
 					const uint64_t nwidInt = OSUtils::jsonIntHex(config["nwid"], 0ULL);
 					if (nwidInt) {
