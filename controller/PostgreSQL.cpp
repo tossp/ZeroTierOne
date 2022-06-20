@@ -649,6 +649,7 @@ void PostgreSQL::initializeNetworks()
 					std::vector<std::string> r = split(*it, '|');
 					json route;
 					route["target"] = r[0];
+					fprintf(stderr, "%s test: routesString %s.\n", _myAddressStr.c_str(),route["via"].c_str());
 					route["via"] = ((route["via"] == "NULL")? nullptr : r[1]);
 					config["routes"].push_back(route);
 				}
