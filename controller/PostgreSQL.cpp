@@ -1315,22 +1315,24 @@ void PostgreSQL::commitThread()
 					}
 
 					fprintf(stderr, "%s test: ztc_network_dns %s.\n", _myAddressStr.c_str(),OSUtils::jsonDump(config["dns"],-1).c_str());
-					// auto dns = config["dns"];
-					// std::string domain = dns["domain"];
-					// std::stringstream servers;
-					// servers << "{";
-					// for (auto j = dns["servers"].begin(); j < dns["servers"].end(); ++j) {
-					// 	servers << *j;
-					// 	if ( (j+1) != dns["servers"].end()) {
-					// 		servers << ",";
-					// 	}
-					// }
-					// servers << "}";
+					auto dns = config["dns"];
+					if(dns.is_object()) {
+						std::string domain = dns["domain"];
+						std::stringstream servers;
+						servers << "{";
+						for (auto j = dns["servers"].begin(); j < dns["servers"].end(); ++j) {
+							servers << *j;
+							if ( (j+1) != dns["servers"].end()) {
+								servers << ",";
+							}
+						}
+						servers << "}";
 
-					// std::string s = servers.str();
+						std::string s = servers.str();
 
-					// res = w.exec_params0("INSERT INTO ztc_network_dns (network_id, domain, servers) VALUES ($1, $2, $3) ON CONFLICT (network_id) DO UPDATE SET domain = EXCLUDED.domain, servers = EXCLUDED.servers",
-					// 	id, domain, s);
+						res = w.exec_params0("INSERT INTO ztc_network_dns (network_id, domain, servers) VALUES ($1, $2, $3) ON CONFLICT (network_id) DO UPDATE SET domain = EXCLUDED.domain, servers = EXCLUDED.servers",
+							id, domain, s);						
+					}
 
 					w.commit();
 
