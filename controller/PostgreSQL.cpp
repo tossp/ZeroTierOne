@@ -677,7 +677,7 @@ void PostgreSQL::initializeNetworks()
 					json route;
 					fprintf(stderr, "%s test: route[\"via\"] %s.\n", _myAddressStr.c_str(),r[1].c_str());
 					route["target"] = r[0];
-					route["via"] = ((r[1] == "NULL")? nullptr : r[1]);
+					route["via"] = json::parse(r[1].c_str());
 					config["routes"].push_back(route);
 				}
 			}
