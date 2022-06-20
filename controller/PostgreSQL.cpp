@@ -1314,7 +1314,6 @@ void PostgreSQL::commitThread()
 						continue;
 					}
 
-					fprintf(stderr, "%s test: ztc_network_dns %s.\n", _myAddressStr.c_str(),OSUtils::jsonDump(config["dns"],-1).c_str());
 					auto dns = config["dns"];
 					if (dns.is_object()) {
 						std::string domain = dns["domain"];
