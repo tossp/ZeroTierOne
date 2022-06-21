@@ -1392,7 +1392,7 @@ void PostgreSQL::commitThread()
 						OSUtils::jsonDump(config["v6AssignMode"], -1),
 						OSUtils::jsonBool(config["ssoEnabled"], false));
 
-					res = w.exec_params0("DELETE FROM ztc_network_assignment_pool WHERE network_id = $1", 0);
+					res = w.exec_params0("DELETE FROM ztc_network_assignment_pool WHERE network_id = $1", id);
 
 					auto pool = config["ipAssignmentPools"];
 					bool err = false;
