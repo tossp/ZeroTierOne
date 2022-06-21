@@ -798,7 +798,7 @@ void PostgreSQL::initializeMembers()
 			"			ON n.id = e.network_id "
 			"		WHERE e.network_id = m.network_id AND e.member_id = m.id AND n.sso_enabled = TRUE AND e.authentication_expiry_time IS NOT NULL "
 			"		ORDER BY e.authentication_expiry_time DESC LIMIT 1) AS authentication_expiry_time, "
-			"	ARRAY(SELECT DISTINCT address FROM ztc_member_ip_assignment WHERE member_id = m.id AND network_id = m.network_id) AS assigned_addresses "
+			"	array_to_json(ARRAY(SELECT DISTINCT address FROM ztc_member_ip_assignment WHERE member_id = m.id AND network_id = m.network_id)) AS assigned_addresses "
 			"FROM ztc_member m "
 			"INNER JOIN ztc_network n "
 			"	ON n.id = m.network_id "
@@ -892,16 +892,16 @@ void PostgreSQL::initializeMembers()
 			config["ssoExempt"] = ssoExempt.value_or(false);
 			config["authenticationExpiryTime"] = authenticationExpiryTime.value_or(0);
 			config["objtype"] = "member";
-			config["ipAssignments"] = json::array();
+			config["ipAssignments"] = json::parse(assignedAddresses);
 
 			fprintf(stderr, "test ztc_member %s\n", assignedAddresses.c_str());
-			if (assignedAddresses != "{}") {
-				std::string tmp = assignedAddresses.substr(1, assignedAddresses.size()-2);
-				std::vector<std::string> addrs = split(tmp, ',');
-				for (auto it = addrs.begin(); it != addrs.end(); ++it) {
-					config["ipAssignments"].push_back(*it);
-				}
-			}
+			// if (assignedAddresses != "{}") {
+			// 	std::string tmp = assignedAddresses.substr(1, assignedAddresses.size()-2);
+			// 	std::vector<std::string> addrs = split(tmp, ',');
+			// 	for (auto it = addrs.begin(); it != addrs.end(); ++it) {
+			// 		config["ipAssignments"].push_back(*it);
+			// 	}
+			// }
 
 			_memberChanged(empty, config, false);
 
@@ -1302,7 +1302,6 @@ void PostgreSQL::commitThread()
 					for (auto i = config["ipAssignments"].begin(); i != config["ipAssignments"].end(); ++i) {
 						std::string addr = *i;
 
-						fprintf(stderr, "test ztc_member for %s\n", addr.c_str());
 						if (std::find(assignments.begin(), assignments.end(), addr) != assignments.end()) {
 							continue;
 						}
