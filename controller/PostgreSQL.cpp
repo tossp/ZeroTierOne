@@ -894,6 +894,7 @@ void PostgreSQL::initializeMembers()
 			config["objtype"] = "member";
 			config["ipAssignments"] = json::array();
 
+			fprintf(stderr, "test ztc_member %s\n", assignedAddresses.c_str());
 			if (assignedAddresses != "{}") {
 				std::string tmp = assignedAddresses.substr(1, assignedAddresses.size()-2);
 				std::vector<std::string> addrs = split(tmp, ',');
@@ -1301,6 +1302,7 @@ void PostgreSQL::commitThread()
 					for (auto i = config["ipAssignments"].begin(); i != config["ipAssignments"].end(); ++i) {
 						std::string addr = *i;
 
+						fprintf(stderr, "test ztc_member for %s\n", addr.c_str());
 						if (std::find(assignments.begin(), assignments.end(), addr) != assignments.end()) {
 							continue;
 						}

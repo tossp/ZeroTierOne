@@ -31,6 +31,7 @@ jobs:
       - name: 生成 world
         run: |
           ./attic/world/mkworld > attic/world/world.c
+          cp world.bin attic/world/planet
           sed -i '25,26d' node/Topology.cpp
           sed -i '23r attic/world/world.c' node/Topology.cpp
           cp node/Topology.cpp attic/world/world.cpp
