@@ -609,6 +609,10 @@ void PostgreSQL::initializeNetworks()
 			std::optional<std::string> dnsServers = std::get<20>(row);
 			std::string assignmentPoolString = std::get<21>(row);
 			std::string routesString = std::get<22>(row);
+		  
+			
+			fprintf(stderr, "test initializeNetworks %s\n", OSUtils::jsonDump(json::parse(capabilities.value_or("[]")), -1).c_str());
+			
 			
 		 	config["id"] = nwid;
 		 	config["nwid"] = nwid;
@@ -669,13 +673,11 @@ void PostgreSQL::initializeNetworks()
 
 			config["routes"] = json::array();
 			if (routesString != "{}") {
-				fprintf(stderr, "%s test: routesString %s.\n", _myAddressStr.c_str(),routesString.c_str());
 				std::string tmp = routesString.substr(1, routesString.size()-2);
 				std::vector<std::string> routes = split(tmp, ',');
 				for (auto it = routes.begin(); it != routes.end(); ++it) {
 					std::vector<std::string> r = split(*it, '|');
 					json route;
-					fprintf(stderr, "%s test: route[\"via\"] %s.\n", _myAddressStr.c_str(),r[1].c_str());
 					route["target"] = r[0];
 					if (r[1] == "NULL") {
 						route["via"] = nullptr;
@@ -685,7 +687,6 @@ void PostgreSQL::initializeNetworks()
 					config["routes"].push_back(route);
 				}
 			}
-			fprintf(stderr, "%s test: routes ok.\n", _myAddressStr.c_str() );
 		 	_networkChanged(empty, config, false);
 
 			auto end = std::chrono::high_resolution_clock::now();
@@ -866,7 +867,7 @@ void PostgreSQL::initializeMembers()
 			std::string assignedAddresses = std::get<20>(row);
 
 			networkMembers.insert(std::pair<std::string, std::string>(setKeyBase+networkId, memberId));
-
+			fprintf(stderr, "test initializeMembers %s\n", OSUtils::jsonDump(json::parse(capabilities.value_or("[]")), -1).c_str());
 			config["id"] = memberId;
 			config["address"] = memberId;
 			config["nwid"] = networkId;
