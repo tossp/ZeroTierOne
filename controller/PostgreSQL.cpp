@@ -610,9 +610,7 @@ void PostgreSQL::initializeNetworks()
 			std::string assignmentPoolString = std::get<21>(row);
 			std::string routesString = std::get<22>(row);
 		  
-			
-			if (capabilities.c_str() == "null"){
-				fprintf(stderr, "test initializeNetworks %s\n", OSUtils::jsonDump(json::parse(capabilities.value_or("[]")), -1).c_str());
+			if (capabilities.value_or("[]") == "null"){
 				capabilities="[]";
 			}
 			
@@ -869,8 +867,7 @@ void PostgreSQL::initializeMembers()
 			std::string assignedAddresses = std::get<20>(row);
 
 			networkMembers.insert(std::pair<std::string, std::string>(setKeyBase+networkId, memberId));
-			if (capabilities.c_str() == "null"){
-				fprintf(stderr, "test initializeMembers %s\n", OSUtils::jsonDump(json::parse(capabilities.value_or("[]")), -1).c_str());
+			if (capabilities.value_or("[]") == "null"){
 				capabilities="[]";
 			}
 			config["id"] = memberId;
