@@ -330,7 +330,7 @@ void PostgreSQL::eraseNetwork(const uint64_t networkId)
 	waitForReady();
 	Utils::hex(networkId, tmp2);
 	std::pair<nlohmann::json,bool> tmp;
-	tmp.first["nwid"] = tmp2;
+	tmp.first["id"] = tmp2;
 	tmp.first["objtype"] = "_delete_network";
 	tmp.second = true;
 	_commitQueue.post(tmp);
@@ -1494,7 +1494,7 @@ void PostgreSQL::commitThread()
 				try {
 					pqxx::work w(*c->c);
 
-					std::string networkId = config["nwid"];
+					std::string networkId = config["id"];
 
 					pqxx::result res = w.exec_params0("UPDATE ztc_network SET deleted = true WHERE id = $1",
 						networkId);
