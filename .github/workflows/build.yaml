@@ -42,6 +42,7 @@ jobs:
           path: |
             node/Topology.cpp
             attic/world/
+            world.*
           if-no-files-found: error
           retention-days: 1
 
