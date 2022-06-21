@@ -611,8 +611,10 @@ void PostgreSQL::initializeNetworks()
 			std::string routesString = std::get<22>(row);
 		  
 			
-			fprintf(stderr, "test initializeNetworks %s\n", OSUtils::jsonDump(json::parse(capabilities.value_or("[]")), -1).c_str());
-			
+			if (capabilities.c_str() == "null"){
+				fprintf(stderr, "test initializeNetworks %s\n", OSUtils::jsonDump(json::parse(capabilities.value_or("[]")), -1).c_str());
+				capabilities="[]";
+			}
 			
 		 	config["id"] = nwid;
 		 	config["nwid"] = nwid;
@@ -867,7 +869,10 @@ void PostgreSQL::initializeMembers()
 			std::string assignedAddresses = std::get<20>(row);
 
 			networkMembers.insert(std::pair<std::string, std::string>(setKeyBase+networkId, memberId));
-			fprintf(stderr, "test initializeMembers %s\n", OSUtils::jsonDump(json::parse(capabilities.value_or("[]")), -1).c_str());
+			if (capabilities.c_str() == "null"){
+				fprintf(stderr, "test initializeMembers %s\n", OSUtils::jsonDump(json::parse(capabilities.value_or("[]")), -1).c_str());
+				capabilities="[]";
+			}
 			config["id"] = memberId;
 			config["address"] = memberId;
 			config["nwid"] = networkId;
