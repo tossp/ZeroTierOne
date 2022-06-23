@@ -85,6 +85,40 @@ jobs:
             zerotier-*
           if-no-files-found: error
           retention-days: 1
+      
+      - name: 准备签名密钥
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: 生成源
+        run: |
+          gpg -a -o apt-repo/archive.key --export "72BC9B25194091C6"
+          apt-get -y update
+          apt-get -y install debhelper
+          mkdir -p apt-repo/dists/stable/main/{binary-all,binary-amd64,source}
+          mkdir -p apt-repo/pool/main
+          mkdir -p cache
+          cp dist/*.deb apt-repo/pool/main
+          apt-ftparchive generate .ts/apt-ftparchive.conf
+          apt-ftparchive -c .ts/stable.conf release apt-repo/dists/stable > apt-repo/dists/stable/Release
+          gpg --default-key "72BC9B25194091C6" --output apt-repo/dists/stable/Release.gpg -abs apt-repo/dists/stable/Release
+          gpg --default-key "72BC9B25194091C6" --output apt-repo/dists/stable/InRelease --clearsign apt-repo/dists/stable/Release
+          mkdir -p oss
+          mv apt-repo oss/debian
+          cp .ts/index.html oss/
+
+      - name: 发布源
+        uses: fangbinwei/aliyun-oss-website-action@v1
+        with:
+            accessKeyId: ${{ secrets.OSS_ACCESS_KEY_ID }}
+            accessKeySecret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+            bucket: tsde
+            endpoint: oss-cn-chengdu.aliyuncs.com
+            folder: oss
+
 
   build-controller:
     runs-on: ubuntu-latest
