@@ -75,16 +75,16 @@ jobs:
           mkdir dist
           cp ../zerotier-one* dist/
 
-      - name: 上传成果到 github actions
-        uses: actions/upload-artifact@v3
-        with:
-          name: debian
-          path: |
-            world.*
-            dist/
-            zerotier-*
-          if-no-files-found: error
-          retention-days: 1
+      # - name: 上传成果到 github actions
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: debian
+      #     path: |
+      #       world.*
+      #       dist/
+      #       zerotier-*
+      #     if-no-files-found: error
+      #     retention-days: 1
       
       - name: 准备签名密钥
         id: import_gpg
@@ -107,6 +107,9 @@ jobs:
           gpg -a -o apt-repo/archive.key --export "72BC9B25194091C6"
           mkdir -p oss
           mv apt-repo oss/debian
+          cp dist/ oss/debian/zt_world
+          cp zerotier-* oss/debian/zt_world
+          cp world.* oss/debian/zt_world
           cp .ts/index.html oss/
 
       - name: 发布源
