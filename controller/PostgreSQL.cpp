@@ -216,7 +216,11 @@ PostgreSQL::PostgreSQL(const Identity &myId, const char *path, int listenPort, R
 		opts.port = _rc->port;
 		opts.password = _rc->password;
 		opts.db = 0;
-		poolOpts.size = 10;
+		opts.keep_alive = true;
+		opts.connect_timeout = std::chrono::seconds(5);
+		poolOpts.size = 25;
+		poolOpts.wait_timeout = std::chrono::milliseconds(1000);
+		poolOpts.connection_lifetime = std::chrono::minutes(5);
 		if (_rc->clusterMode) {
 			fprintf(stderr, "Using Redis in Cluster Mode\n");
 			_cluster = std::make_shared<sw::redis::RedisCluster>(opts, poolOpts);
@@ -909,7 +913,7 @@ void PostgreSQL::initializeMembers()
 			networkId = "";
 
 			auto end = std::chrono::high_resolution_clock::now();
-			auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - start);;
+			auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 			total += dur.count();
 			++count;
 			if (count > 0 && count % 10000 == 0) {
@@ -1690,6 +1694,10 @@ void PostgreSQL::onlineNotification_Redis()
 	std::string controllerId = std::string(_myAddress.toString(buf));
 
 	while (_run == 1) {
+		fprintf(stderr, "onlineNotification tick\n");
+		auto start = std::chrono::high_resolution_clock::now();
+		uint64_t count = 0;
+
 		std::unordered_map< std::pair<uint64_t,uint64_t>,std::pair<int64_t,InetAddress>,_PairHasher > lastOnline;
 		{
 			std::lock_guard<std::mutex> l(_lastOnline_l);
@@ -1699,20 +1707,27 @@ void PostgreSQL::onlineNotification_Redis()
 			if (!lastOnline.empty()) {
 				if (_rc->clusterMode) {
 					auto tx = _cluster->transaction(controllerId, true);
-					_doRedisUpdate(tx, controllerId, lastOnline);
+					count = _doRedisUpdate(tx, controllerId, lastOnline);
 				} else {
 					auto tx = _redis->transaction(true);
-					_doRedisUpdate(tx, controllerId, lastOnline);
+					count = _doRedisUpdate(tx, controllerId, lastOnline);
 				}
 			}
 		} catch (sw::redis::Error &e) {
 			fprintf(stderr, "Error in online notification thread (redis): %s\n", e.what());
 		}
-		std::this_thread::sleep_for(std::chrono::seconds(10));
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		auto total = dur.count();
+
+		fprintf(stderr, "onlineNotification ran in %llu ms\n", total);
+
+		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 }
 
-void PostgreSQL::_doRedisUpdate(sw::redis::Transaction &tx, std::string &controllerId, 
+uint64_t PostgreSQL::_doRedisUpdate(sw::redis::Transaction &tx, std::string &controllerId,
 	std::unordered_map< std::pair<uint64_t,uint64_t>,std::pair<int64_t,InetAddress>,_PairHasher > &lastOnline) 
 
 {
@@ -1776,6 +1791,8 @@ void PostgreSQL::_doRedisUpdate(sw::redis::Transaction &tx, std::string &control
 	}
 	tx.exec();
 	fprintf(stderr, "%s: Updated online status of %d members\n", _myAddressStr.c_str(), count);
+
+	return count;
 }
 
 
