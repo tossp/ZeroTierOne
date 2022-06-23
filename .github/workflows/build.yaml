@@ -49,7 +49,7 @@ jobs:
 
   build-debian:
     runs-on: ubuntu-latest
-    name: 构建 debian 安装包
+    name: 构建 debian 安装源
     needs: [pre]
     steps:
       - name: 初始化环境
