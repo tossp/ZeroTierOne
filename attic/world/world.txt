@@ -12,8 +12,8 @@
 	roots.back().stableEndpoints.push_back(InetAddress("45.76.53.208/9999"));
 	roots.back().stableEndpoints.push_back(InetAddress("2001:19f0:7001:4682:5400:4ff:fe09:5384/9999"));
 
-	// New Jersey
+	// New York (NJ)
 	roots.push_back(World::Root());
-	roots.back().identity = Identity("4fb744953a:0:94125a05749e8fd3ef15abe50d431895209e70271bd45021b71fa757bea5674a8553631c25a7b54f274f8b5a3d67372c295e61a131bca1766b79bb10d92c7509");
-	roots.back().stableEndpoints.push_back(InetAddress("45.76.53.208/9999"));
-	roots.back().stableEndpoints.push_back(InetAddress("2001:19f0:7001:4682:5400:4ff:fe09:5384/9999"));
+	roots.back().identity = Identity("6b75d481b0:0:e621ba93abb3e257b5e726575ff4c907eb0ef01736c207b44a3cdf7328ab0d369d28b3c9161bf4fc52ead741fbbeeb13f53a8cc1e2b8dcee7057ceea17d9efc1");
+	roots.back().stableEndpoints.push_back(InetAddress("45.77.219.107/9999"));
+	roots.back().stableEndpoints.push_back(InetAddress("2001:19f0:5:328e:5400:04ff:fe0c:4ce4/9999"));
