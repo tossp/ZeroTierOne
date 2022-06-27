@@ -1,3 +1,5 @@
+	// 最多四个节点，每个节点最多三十二个入口
+	
 	// hangzhou
 	roots.push_back(World::Root());
 	roots.back().identity = Identity("68beb14d5d:0:e6f79760ff272d941797c51518d0c5819047f06d6bf4006397ca4d1bb452147dddbff8e62afab3e03adaffd3e02aca64bfd1f9a7e331e25040b995df112f5c37");
@@ -5,6 +7,12 @@
 	roots.back().stableEndpoints.push_back(InetAddress("2001:470:23:d1::2/9999"));
 
 	// Tokyo
+	roots.push_back(World::Root());
+	roots.back().identity = Identity("4fb744953a:0:94125a05749e8fd3ef15abe50d431895209e70271bd45021b71fa757bea5674a8553631c25a7b54f274f8b5a3d67372c295e61a131bca1766b79bb10d92c7509");
+	roots.back().stableEndpoints.push_back(InetAddress("45.76.53.208/9999"));
+	roots.back().stableEndpoints.push_back(InetAddress("2001:19f0:7001:4682:5400:4ff:fe09:5384/9999"));
+
+	// New Jersey
 	roots.push_back(World::Root());
 	roots.back().identity = Identity("4fb744953a:0:94125a05749e8fd3ef15abe50d431895209e70271bd45021b71fa757bea5674a8553631c25a7b54f274f8b5a3d67372c295e61a131bca1766b79bb10d92c7509");
 	roots.back().stableEndpoints.push_back(InetAddress("45.76.53.208/9999"));
