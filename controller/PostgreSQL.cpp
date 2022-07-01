@@ -217,10 +217,11 @@ PostgreSQL::PostgreSQL(const Identity &myId, const char *path, int listenPort, R
 		opts.password = _rc->password;
 		opts.db = 0;
 		opts.keep_alive = true;
-		opts.connect_timeout = std::chrono::seconds(5);
+		opts.connect_timeout = std::chrono::seconds(3);
 		poolOpts.size = 25;
-		poolOpts.wait_timeout = std::chrono::milliseconds(1000);
-		poolOpts.connection_lifetime = std::chrono::minutes(5);
+		poolOpts.wait_timeout = std::chrono::seconds(5);
+		poolOpts.connection_lifetime = std::chrono::minutes(3);
+		poolOpts.connection_idle_time = std::chrono::minutes(1);
 		if (_rc->clusterMode) {
 			fprintf(stderr, "Using Redis in Cluster Mode\n");
 			_cluster = std::make_shared<sw::redis::RedisCluster>(opts, poolOpts);
@@ -716,11 +717,11 @@ void PostgreSQL::initializeNetworks()
 			if (_redisMemberStatus) {
 				fprintf(stderr, "adding networks to redis...\n");
 				if (_rc->clusterMode) {
-					auto tx = _cluster->transaction(_myAddressStr, true);
+					auto tx = _cluster->transaction(_myAddressStr, true, false);
 					tx.sadd(setKey, networkSet.begin(), networkSet.end());
 					tx.exec();
 				} else {
-					auto tx = _redis->transaction(true);
+					auto tx = _redis->transaction(true, false);
 					tx.sadd(setKey, networkSet.begin(), networkSet.end());
 					tx.exec();
 				}
@@ -772,13 +773,13 @@ void PostgreSQL::initializeMembers()
 			if (!deletes.empty()) {
 				try {
 					if (_rc->clusterMode) {
-						auto tx = _cluster->transaction(_myAddressStr, true);
+						auto tx = _cluster->transaction(_myAddressStr, true, false);
 						for (std::string k : deletes) {
 							tx.del(k);
 						}
 						tx.exec();
 					} else {
-						auto tx = _redis->transaction(true);
+						auto tx = _redis->transaction(true, false);
 						for (std::string k : deletes) {
 							tx.del(k);
 						}
@@ -935,13 +936,13 @@ void PostgreSQL::initializeMembers()
 			if (_redisMemberStatus) {
 				fprintf(stderr, "Load member data into redis...\n");
 				if (_rc->clusterMode) {
-					auto tx = _cluster->transaction(_myAddressStr, true);
+					auto tx = _cluster->transaction(_myAddressStr, true, false);
 					for (auto it : networkMembers) {
 						tx.sadd(it.first, it.second);
 					}
 					tx.exec();
 				} else {
-					auto tx = _redis->transaction(true);
+					auto tx = _redis->transaction(true, false);
 					for (auto it : networkMembers) {
 						tx.sadd(it.first, it.second);
 					}
@@ -961,6 +962,7 @@ void PostgreSQL::initializeMembers()
 		}
 	} catch (sw::redis::Error &e) {
 		fprintf(stderr, "ERROR: Error initializing members (redis): %s\n", e.what());
+		exit(-1);
 	} catch (std::exception &e) {
 		fprintf(stderr, "ERROR: Error initializing member: %s-%s %s\n", networkId.c_str(), memberId.c_str(), e.what());
 		exit(-1);
@@ -1022,12 +1024,16 @@ void PostgreSQL::heartbeat()
 		}
 		_pool->unborrow(c);
 
-		if (_redisMemberStatus) {
-			if (_rc->clusterMode) {
-				_cluster->zadd("controllers", "controllerId", ts);
-			} else {
-				_redis->zadd("controllers", "controllerId", ts);
+		try {
+			if (_redisMemberStatus) {
+				if (_rc->clusterMode) {
+					_cluster->zadd("controllers", "controllerId", ts);
+				} else {
+					_redis->zadd("controllers", "controllerId", ts);
+				}
 			}
+		} catch (sw::redis::Error &e) {
+			fprintf(stderr, "ERROR: Redis error in heartbeat thread: %s\n", e.what());
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -1706,10 +1712,10 @@ void PostgreSQL::onlineNotification_Redis()
 		try {
 			if (!lastOnline.empty()) {
 				if (_rc->clusterMode) {
-					auto tx = _cluster->transaction(controllerId, true);
+					auto tx = _cluster->transaction(controllerId, true, false);
 					count = _doRedisUpdate(tx, controllerId, lastOnline);
 				} else {
-					auto tx = _redis->transaction(true);
+					auto tx = _redis->transaction(true, false);
 					count = _doRedisUpdate(tx, controllerId, lastOnline);
 				}
 			}
